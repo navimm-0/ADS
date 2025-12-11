@@ -1,0 +1,111 @@
+.login-page.bg-app {
+  position: relative;
+  min-height: 100vh;
+  background-image: url("./images/fondo-graficador.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+      circle at top left,
+      rgba(0, 123, 255, 0.25),
+      transparent 50%
+    ),
+    rgba(0, 0, 0, 0.78);
+  z-index: 0;
+}
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 920px;
+  border-radius: 20px;
+  overflow: hidden;
+  background-color: rgba(18, 18, 18, 0.9);
+}
+
+.info-panel {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 123, 255, 0.9),
+    rgba(111, 66, 193, 0.9)
+  );
+  color: #ffffff;
+  padding: 32px 28px;
+}
+
+.project-title {
+  font-size: 1.7rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.project-subtitle {
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+}
+
+.feature-list {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 0;
+}
+
+.feature-list li {
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+
+.form-panel {
+  background-color: rgba(18, 18, 18, 0.95);
+  color: #ffffff;
+  padding: 32px 28px;
+}
+
+.form-label {
+  color: #f1f1f1;
+}
+
+.form-control {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: #4b4b4b;
+  color: #ffffff;
+}
+
+.form-control::placeholder {
+  color: #bcbcbc;
+}
+
+.form-control:focus {
+  background-color: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  color: #ffffff;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #007bff, #6f42c1);
+  border: none;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #0056b3, #5931a7);
+}
+
+.alert-success,
+.alert-danger {
+  border: none;
+}
+
+@media (max-width: 767.98px) {
+  .login-card {
+    margin: 0 16px;
+  }
+  .form-panel {
+    padding: 24px 20px;
+  }
+}
