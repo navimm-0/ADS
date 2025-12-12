@@ -4,7 +4,7 @@ import "./styles.css";
 
 const API_CONTEXT = "GraficadorDFMBackend";
 
-const Login = () => {
+function Login() {
   const [usuario, setUsuario] = useState("");
   const [password, setPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
@@ -18,16 +18,16 @@ const Login = () => {
 
     try {
       const respuesta = await fetch(
-        `http://localhost:8080/`,
+        `http://localhost:8080/${API_CONTEXT}/login`,
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
           },
           body: new URLSearchParams({
             usuario,
-            password
-          }).toString()
+            password,
+          }).toString(),
         }
       );
 
@@ -38,7 +38,7 @@ const Login = () => {
         setMensaje(`Acceso concedido. ${data.mensaje}`);
       } else {
         setTipoMensaje("danger");
-        setMensaje(data.mensaje);
+        setMensaje(data.mensaje || "Usuario o password incorrectos.");
         setUsuario("");
         setPassword("");
       }
@@ -58,6 +58,7 @@ const Login = () => {
 
       <div className="container h-100 d-flex align-items-center justify-content-center">
         <div className="row login-card shadow-lg">
+          {/* Panel info proyecto */}
           <div className="col-md-6 info-panel d-none d-md-flex flex-column justify-content-between">
             <div>
               <h2 className="project-title">
@@ -82,6 +83,7 @@ const Login = () => {
             </div>
           </div>
 
+          {/* Panel formulario */}
           <div className="col-md-6 form-panel d-flex align-items-center">
             <div className="w-100">
               <h3 className="text-center mb-3">Inicio de sesión</h3>
@@ -140,6 +142,6 @@ const Login = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Login;

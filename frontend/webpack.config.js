@@ -1,11 +1,13 @@
 const path = require("path");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
   mode: "development",
   entry: "./src/index.jsx",
   output: {
-    path: path.resolve(__dirname), // 👉 main.js en la raíz del proyecto
-    filename: "main.js"
+    path: path.resolve(__dirname, "dist"),   
+    filename: "main.js",
+    clean: true                               
   },
   module: {
     rules: [
@@ -30,9 +32,15 @@ module.exports = {
   resolve: {
     extensions: [".js", ".jsx"]
   },
+  plugins: [
+    new HtmlWebpackPlugin({
+      template: "./index.html", 
+      filename: "index.html"
+    })
+  ],
   devServer: {
     static: {
-      directory: path.join(__dirname)
+      directory: path.join(__dirname, "dist")
     },
     port: 8080,
     open: true
