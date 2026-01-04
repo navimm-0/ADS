@@ -1,48 +1,45 @@
-const path = require("path");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-  mode: "development",
-  entry: "./src/index.jsx",
-  output: {
-    path: path.resolve(__dirname, "dist"),   
+    mode: "development",
+    entry: "./src/login.jsx",
+    output: {
     filename: "main.js",
-    clean: true                               
-  },
-  module: {
-    rules: [
-      {
-        test: /\.jsx?$/,
-        exclude: /node_modules/,
-        use: "babel-loader"
-      },
-      {
-        test: /\.css$/i,
-        use: ["style-loader", "css-loader"]
-      },
-      {
-        test: /\.(png|jpe?g|gif|svg)$/i,
-        type: "asset/resource",
-        generator: {
-          filename: "images/[name][ext]"
-        }
-      }
-    ]
-  },
-  resolve: {
-    extensions: [".js", ".jsx"]
-  },
-  plugins: [
-    new HtmlWebpackPlugin({
-      template: "./index.html", 
-      filename: "index.html"
-    })
-  ],
-  devServer: {
-    static: {
-      directory: path.join(__dirname, "dist")
+    path: path.resolve(__dirname, 'dist'),
+    clean: true
     },
-    port: 8080,
-    open: true
+    resolve: {
+    extensions: ['.js', '.jsx']
+    },   
+    plugins: [
+    new HtmlWebpackPlugin({
+      template: './public/index.html', // Ruta plantilla HTML
+      filename: 'index.html', // Nombre del archivo de salida
+    })
+  ],    
+    module: {
+        rules: [
+          {
+            test: /\.(js|jsx)$/,
+            exclude: /node_modules/,
+            use: {
+              loader: "babel-loader"
+            }
+          },
+          {
+            test: /\.css$/,
+            use: ["style-loader", "css-loader"]
+          }          
+        ]
+      },    
+    devServer: {
+    static: {
+      directory: path.join(__dirname, 'dist'), 
+    },
+    port: 8080, // Puerto del servidor
+    open: true, // Abrir navegador automáticamente
+    hot: true, // Habilitar Hot Module Replacement (HMR)
+    historyApiFallback: true, // Aplicaciones SPA
   }
-};
+}

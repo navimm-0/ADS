@@ -1,0 +1,20 @@
+npm init -y
+
+npm i webpack webpack-cli webpack-dev-server --save-dev 
+npm i react react-dom
+npm i style-loader css-loader --save-dev
+npm i react-bootstrap bootstrap
+
+// babel preset env SE UTILIZA PARA BAJAR LA VERSION DE ECMASCRIPT 6 A LA VERSION 5
+// babel preset react PARA LA TRANSFORMACION JSX
+npm i @babel/core babel‐loader @babel/preset‐env @babel/preset‐react ‐‐save‐dev
+npm i react-router-dom
+npm i axios
+
+npm i html-webpack-plugin
+
+  "scripts": {
+    "build": "webpack",
+    "start": "webpack serve --mode development"
+  }
+
