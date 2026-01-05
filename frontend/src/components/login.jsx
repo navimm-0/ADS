@@ -27,22 +27,31 @@ export default function Login() {
       if (data.status === 'OK' || data.ok || data.tipo) {
         // usuario válido
         const tipo = data.tipo || data.tipoUsuario || 'usuario';
-        setAlerta({ tipo: 'success', texto: 'USUARIO VÁLIDO' });
+        const alertaObj = { tipo: 'success', texto: 'USUARIO VÁLIDO' };
+        setAlerta(alertaObj);
+        // persistir alerta y datos para que la página destino los muestre como toast
+        try { localStorage.setItem('alerta', JSON.stringify(alertaObj)); } catch (e) {}
+        try { localStorage.setItem('usuario', usuario); } catch (e) {}
+        try { localStorage.setItem('tipoUsuario', tipo); } catch (e) {}
         // redirigir según tipo
         if (tipo.toLowerCase() === 'administrador' || tipo.toLowerCase() === 'admin') {
-          navigate('/administrator', { state: { usuario, tipo, alerta: { tipo: 'success', texto: 'USUARIO VÁLIDO' } } });
+          navigate('/administrator', { state: { usuario, tipo, alerta: alertaObj } });
         } else {
           // usuario válido pero no admin: llevar a administrador igualmente o a otra ruta
-          navigate('/administrator', { state: { usuario, tipo, alerta: { tipo: 'success', texto: 'USUARIO VÁLIDO' } } });
+          navigate('/administrator', { state: { usuario, tipo, alerta: alertaObj } });
         }
       } else {
         // usuario inválido / no registrado
-        setAlerta({ tipo: 'danger', texto: data.mensaje || 'USUARIO INVÁLIDO' });
+        const alertaObj = { tipo: 'danger', texto: data.mensaje || 'USUARIO INVÁLIDO' };
+        setAlerta(alertaObj);
+        try { localStorage.setItem('alerta', JSON.stringify(alertaObj)); } catch (e) {}
         // redirigir a la página de no registrado con estado
-        navigate('/no-registrado', { state: { alerta: { tipo: 'danger', texto: data.mensaje || 'USUARIO NO REGISTRADO EN LA APLICACIÓN WEB' } } });
+        navigate('/no-registrado', { state: { alerta: alertaObj } });
       }
     } catch (err) {
-      setAlerta({ tipo: 'warning', texto: 'No se pudo conectar con el servidor. Detalle: ' + err.message });
+      const alertaObj = { tipo: 'warning', texto: 'No se pudo conectar con el servidor. Detalle: ' + err.message };
+      setAlerta(alertaObj);
+      try { localStorage.setItem('alerta', JSON.stringify(alertaObj)); } catch (e) {}
     } finally {
       setCargando(false);
     }

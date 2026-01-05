@@ -40,10 +40,10 @@ const NoRegistrado = () => {
           <div className="card shadow-sm border-danger">
             <div className="card-body text-center">
               <h1 className="display-6 fw-bold text-danger">USUARIO NO REGISTRADO EN LA APLICACIÓN WEB</h1>
-              <p className="text-muted mt-3">Por favor verifica tus credenciales o regístrate si aún no lo has hecho.</p>
+              <p className="text-muted mt-3">Por favor verifica tus credenciales y vuelve a intentarlo</p>
 
               <button
-                className="btn btn-primary mt-4"
+                className="btn btn-pastel w-100 mt-2"
                 onClick={() => navigate('/')}
               >
                 Regresar al Login para volver a intentarlo

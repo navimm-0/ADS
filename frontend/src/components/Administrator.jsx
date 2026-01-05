@@ -5,8 +5,16 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const Administrator = () => {
   const location = useLocation();
   const navigate = useNavigate();
-
   let incomingAlert = location.state && location.state.alerta ? location.state.alerta : null;
+  // obtener usuario y tipo desde location.state o localStorage
+  let usuario = location.state && location.state.usuario ? location.state.usuario : null;
+  let tipoUsuario = location.state && location.state.tipo ? location.state.tipo : null;
+  if (!usuario) {
+    try { usuario = localStorage.getItem('usuario'); } catch (e) { usuario = null; }
+  }
+  if (!tipoUsuario) {
+    try { tipoUsuario = localStorage.getItem('tipoUsuario'); } catch (e) { tipoUsuario = null; }
+  }
   if (!incomingAlert) {
     try {
       const raw = localStorage.getItem('alerta');
@@ -38,7 +46,7 @@ const Administrator = () => {
 
       <div className="container py-5">
         <div className="mb-4">
-          <h1 className="h3 fw-bold mb-1">Bienvenido {usuario}</h1>
+          <h1 className="h3 fw-bold mb-1">Bienvenido {usuario || ''}</h1>
           {tipoUsuario && (
             <p className="text-muted mb-0">Tipo de usuario: {tipoUsuario}</p>
           )}

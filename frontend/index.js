@@ -1,18 +1,15 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter } from 'react-router-dom';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import './src/styles.css';
 
-import BootstrapReac from './src/components/BootstrapReact.jsx';
-import Administrator from './src/components/Administrator.jsx'; // create this
+import BootstrapReact from './src/components/BootstrapReact.jsx';
 
 function Aplicacion() {
   return (
     <HashRouter>
-      <Routes>
-        <Route path="/" element={<BootstrapReac />} />
-        <Route path="/administrator" element={<Administrator />} />
-      </Routes>
+      <BootstrapReact />
     </HashRouter>
   );
 }
