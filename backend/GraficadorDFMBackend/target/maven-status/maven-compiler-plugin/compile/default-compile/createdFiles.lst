@@ -1,2 +1,2 @@
-API/Login.class
-API/DB.class
+API\DB.class
+API\Login.class
