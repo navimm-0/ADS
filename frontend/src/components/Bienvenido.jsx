@@ -24,10 +24,12 @@ const Administrator = () => {
     } catch (e) { incomingAlert = null; }
   }
 
+  const [alertaActual, setAlertaActual] = useState(incomingAlert);
   const [toast, setToast] = useState(!!incomingAlert);
 
+
   useEffect(() => {
-    if (incomingAlert) {
+    if (alertaActual) {
       setToast(true);
       const t = setTimeout(() => {
         setToast(false);
@@ -35,7 +37,7 @@ const Administrator = () => {
       }, 3000);
       return () => clearTimeout(t);
     }
-  }, [incomingAlert]);
+  }, [alertaActual]);
 
   const API_URL = 'http://localhost:8080/crud';
   const [lista, setLista] = useState([]);
@@ -53,9 +55,7 @@ const Administrator = () => {
   useEffect(() => { cargarDatos(); }, []);
 
   const verItem = (item) => {
-    const url = item?.datos?.url;
-    if (url) window.open(url, '_blank', 'noopener');
-    else alert('No hay vista previa disponible');
+    navigate('/canvas/view', { state: { usuario, tipo: tipoUsuario, itemToView: item } });
   };
 
   const editarItem = (item) => {
@@ -63,16 +63,28 @@ const Administrator = () => {
     navigate('/canvas', { state: { usuario, tipo: tipoUsuario, mode: 'edit', itemToEdit: item } });
   };
 
-  const eliminarItem = async (item) => {
-    if (!window.confirm('¿Eliminar diagrama?')) return;
+  const [deleteModal, setDeleteModal] = useState({ show: false, item: null });
+
+  const eliminarItem = (item) => {
+    setDeleteModal({ show: true, item });
+  };
+
+  const confirmarEliminar = async () => {
+    const item = deleteModal.item;
+    if (!item) return;
+
     try {
       await fetch(`${API_URL}?id=${item.id_db}`, { method: 'DELETE' });
+      setDeleteModal({ show: false, item: null });
       cargarDatos();
+      setAlertaActual({ tipo: 'success', texto: 'Diagrama eliminado' }); // Toast
     } catch (e) {
       console.error('Error eliminando:', e);
-      alert('Error al eliminar');
+      setDeleteModal({ show: false, item: null });
+      setAlertaActual({ tipo: 'danger', texto: 'No se pudo eliminar el diagrama' });
     }
   };
+
 
   const crearDiagrama = () => {
     // Ajusta esta ruta a donde realmente está tu editor/creador de diagramas
@@ -82,21 +94,16 @@ const Administrator = () => {
   return (
     <div>
       <div className="toast-container position-fixed top-0 end-0 p-3" style={{ zIndex: 1080 }}>
-        {toast && incomingAlert && (
-          <div
-            className={`toast align-items-center text-bg-${incomingAlert.tipo} border-0 show`}
-            role="alert"
-            aria-live="polite"
-            aria-atomic="true"
-          >
+        {toast && alertaActual && (
+          <div className={`toast align-items-center text-bg-${alertaActual.tipo} border-0 show`} role="alert" aria-live="polite" aria-atomic="true">
             <div className="d-flex">
-              <div className="toast-body">{incomingAlert.texto}</div>
+              <div className="toast-body">{alertaActual.texto}</div>
               <button
                 type="button"
                 className="btn-close btn-close-white me-2 m-auto"
                 aria-label="Close"
-                onClick={() => setToast(false)}
-              ></button>
+                onClick={() => { setToast(false); setAlertaActual(null); }}
+              />
             </div>
           </div>
         )}
@@ -171,8 +178,35 @@ const Administrator = () => {
           Cerrar sesión
         </button>
       </div>
+          {deleteModal.show && (
+            <>
+              <div className="modal show d-block" tabIndex="-1" role="dialog">
+                <div className="modal-dialog modal-dialog-centered" role="document">
+                  <div className="modal-content">
+                    <div className="modal-header">
+                      <h5 className="modal-title">Alerta</h5>
+                      <button type="button" className="btn-close" aria-label="Close" onClick={() => setDeleteModal({ show: false, item: null })} />
+                    </div>
+                    <div className="modal-body">
+                      <p className="mb-0">¿Seguro que quiere eliminar el diagrama?</p>
+                    </div>
+                    <div className="modal-footer">
+                      <button type="button" className="btn btn-danger" onClick={confirmarEliminar}>
+                        Sí
+                      </button>
+                      <button type="button" className="btn btn-secondary" onClick={() => setDeleteModal({ show: false, item: null })}>
+                        No
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-backdrop show" />
+            </>
+          )}
     </div>
   );
 };
 
 export default Administrator;
+

@@ -197,6 +197,39 @@ const nodeTypes = {
   multimedia: MultimediaNode,
 };
 
+const compressDataUrl = async (dataUrl, {
+    mime = 'image/jpeg',   // 'image/webp' también sirve
+    quality = 0.6,         // 0.4-0.8 recomendado
+    maxWidth = 1200,       // reduce resolución
+    } = {}) => {
+    const img = new Image();
+    img.src = dataUrl;
+
+    await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+    });
+
+    const scale = Math.min(1, maxWidth / img.width);
+    const w = Math.round(img.width * scale);
+    const h = Math.round(img.height * scale);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+
+    const ctx = canvas.getContext('2d');
+
+    // fondo blanco para JPEG (evita fondo negro si hay transparencia)
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.drawImage(img, 0, 0, w, h);
+
+    return canvas.toDataURL(mime, quality);
+};
+
+
 const Canvas = ({ usuario, tipo, mode = 'create', itemToEdit = null, onSaved = null }) => {
     const navigate = useNavigate();
     const regresar = () => {
@@ -211,6 +244,15 @@ const Canvas = ({ usuario, tipo, mode = 'create', itemToEdit = null, onSaved = n
 
     const reactFlowWrapper = useRef(null);
     const [rfInstance, setRfInstance] = useState(null);
+
+    const [toastInfo, setToastInfo] = useState({ show: false, tipo: 'success', texto: '' });
+    const [dirty, setDirty] = useState(false);
+    const [showLeaveModal, setShowLeaveModal] = useState(false);
+
+    const showToast = (texto, tipo = 'success') => {
+    setToastInfo({ show: true, tipo, texto });
+    setTimeout(() => setToastInfo((t) => ({ ...t, show: false })), 2500);
+    };
 
     const onNodeLabelChange = useCallback((nodeId, newLabel) => {
         setNodes((nds) =>
@@ -257,6 +299,7 @@ const Canvas = ({ usuario, tipo, mode = 'create', itemToEdit = null, onSaved = n
         setModoEdicion(true);
         setIdEditar(itemToEdit.id_db);
         setForm(itemToEdit.datos);
+        setDirty(false);
 
         if (itemToEdit.datos?.estructura?.nodes) {
         const nodesWithFns = itemToEdit.datos.estructura.nodes.map((n) => ({
@@ -298,7 +341,17 @@ const Canvas = ({ usuario, tipo, mode = 'create', itemToEdit = null, onSaved = n
         type: 'smoothstep',
         };
         setEdges((eds) => addEdge(newEdge, eds));
+        setDirty(true);
     }, [setEdges]);
+
+    const doRegresar = () => {
+        navigate('/administrator', { state: { usuario, tipo } });
+        };
+
+        const intentarSalir = () => {
+        if (dirty) setShowLeaveModal(true);
+        else doRegresar();
+    };
 
     const agregarFigura = (tipoFigura) => {
         const id = `${nodes.length + 1}_${Date.now()}`;
@@ -306,7 +359,7 @@ const Canvas = ({ usuario, tipo, mode = 'create', itemToEdit = null, onSaved = n
         id,
         position: { x: Math.random() * 250 + 50, y: Math.random() * 250 + 50 },
         data: { label: '', onChange: onNodeLabelChange },
-        };
+    };
 
     switch (tipoFigura) {
         case 'Inicio/Fin':
@@ -338,36 +391,58 @@ const Canvas = ({ usuario, tipo, mode = 'create', itemToEdit = null, onSaved = n
     }
 
     setNodes((nds) => nds.concat(newNode));
+    setDirty(true);
   };
 
   const capturarDiagrama = () => {
-    if (reactFlowWrapper.current === null) return;
+  if (reactFlowWrapper.current === null) return;
 
-    const controls = reactFlowWrapper.current.querySelector('.react-flow__controls');
-    if (controls) controls.style.display = 'none';
+  const controls = reactFlowWrapper.current.querySelector('.react-flow__controls');
+  if (controls) controls.style.display = 'none';
 
-    toPng(reactFlowWrapper.current, { cacheBust: true, backgroundColor: '#ffffff', pixelRatio: 2 })
-      .then((dataUrl) => {
-        setForm((prev) => ({ ...prev, url: dataUrl, tipo: 'png' }));
-        alert('Diagrama capturado.');
-      })
-      .catch((err) => {
-        console.log(err);
-        alert('Error al capturar');
-      })
-      .finally(() => {
-        if (controls) controls.style.display = 'block';
+  toPng(reactFlowWrapper.current, { cacheBust: true, backgroundColor: '#ffffff', pixelRatio: 2 })
+    .then(async (dataUrl) => {
+      // PNG -> JPEG (más ligero)
+      const compressed = await compressDataUrl(dataUrl, {
+        mime: 'image/webp',
+        quality: 0.6,
+        maxWidth: 1200,
       });
-  };
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+      setForm((prev) => ({ ...prev, url: compressed, tipo: 'webp' }));
+      showToast('Diagrama capturado', 'success');
+    })
+    .catch((err) => {
+      console.log(err);
+      showToast('No se pudo capturar el diagrama', 'danger');
+    })
+    .finally(() => {
+      if (controls) controls.style.display = 'block';
+    });
+};
+
+  const handleChange = (e) => {
+    setDirty(true);
+    setForm({ ...form, [e.target.name]: e.target.value });
+    };
 
   const limpiarFormulario = () => {
     setForm({ titulo: '', descripcion: '', tipo: 'jpg', url: '' });
     setModoEdicion(false);
     setIdEditar(null);
     setNodoInicial();
+    setDirty(false);
   };
+
+  const handleNodesChange = useCallback((changes) => {
+    setDirty(true);
+    onNodesChange(changes);
+  }, [onNodesChange]);
+
+  const handleEdgesChange = useCallback((changes) => {
+    setDirty(true);
+    onEdgesChange(changes);
+  }, [onEdgesChange]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -418,6 +493,22 @@ const Canvas = ({ usuario, tipo, mode = 'create', itemToEdit = null, onSaved = n
       {mode !== 'edit' && (
         <h2 className="mb-4 text-primary">Crear diagrama</h2>
       )}
+
+      <div className="toast-container position-fixed top-0 end-0 p-3" style={{ zIndex: 1080 }}>
+        {toastInfo.show && (
+            <div className={`toast align-items-center text-bg-${toastInfo.tipo} border-0 show`} role="alert" aria-live="polite" aria-atomic="true">
+            <div className="d-flex">
+                <div className="toast-body">{toastInfo.texto}</div>
+                <button
+                type="button"
+                className="btn-close btn-close-white me-2 m-auto"
+                aria-label="Close"
+                onClick={() => setToastInfo((t) => ({ ...t, show: false }))}
+                />
+            </div>
+            </div>
+        )}
+       </div>
 
       <div className="card p-4 mb-4 shadow-sm bg-light">
         <h5 className="mb-3">{modoEdicion ? '✏️ Editar Diagrama' : '➕ Nuevo Diagrama'}</h5>
@@ -485,8 +576,8 @@ const Canvas = ({ usuario, tipo, mode = 'create', itemToEdit = null, onSaved = n
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
+                onNodesChange={handleNodesChange}
+                onEdgesChange={handleEdgesChange}
                 onConnect={onConnect}
                 onInit={setRfInstance}
                 nodeTypes={nodeTypes}
@@ -514,17 +605,50 @@ const Canvas = ({ usuario, tipo, mode = 'create', itemToEdit = null, onSaved = n
           </button>
 
           {modoEdicion && (
-            <button type="button" className="btn btn-secondary w-100 mt-2" onClick={regresar}>
+            <button type="button" className="btn btn-secondary w-100 mt-2" onClick={intentarSalir}>
               Cancelar Edición
             </button>
           )}
         </form>
       </div>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <button type="button" className="btn btn-sm btn-eliminar" onClick={regresar}>
+        <button type="button" className="btn btn-sm btn-eliminar" onClick={intentarSalir}>
             ← Regresar
         </button>
       </div>
+      {showLeaveModal && (
+        <>
+            <div className="modal show d-block" tabIndex="-1" role="dialog">
+            <div className="modal-dialog modal-dialog-centered" role="document">
+                <div className="modal-content">
+                <div className="modal-header">
+                    <h5 className="modal-title">Alerta</h5>
+                    <button type="button" className="btn-close" aria-label="Close" onClick={() => setShowLeaveModal(false)} />
+                </div>
+                <div className="modal-body">
+                    <p className="mb-0">¿Seguro que quiere salir sin guardar?</p>
+                </div>
+                <div className="modal-footer">
+                    <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={() => {
+                        setShowLeaveModal(false);
+                        doRegresar(); // "No guardar"
+                    }}
+                    >
+                    No guardar
+                    </button>
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowLeaveModal(false)}>
+                    Cancelar
+                    </button>
+                </div>
+                </div>
+            </div>
+            </div>
+            <div className="modal-backdrop show" />
+        </>
+      )}
     </div>
   );
 };
