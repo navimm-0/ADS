@@ -43,7 +43,7 @@ const NoRegistrado = () => {
               <p className="text-muted mt-3">Por favor verifica tus credenciales y vuelve a intentarlo</p>
 
               <button
-                className="btn btn-pastel w-100 mt-2"
+                className="btn btn-sm btn-ver"
                 onClick={() => navigate('/')}
               >
                 Regresar al Login para volver a intentarlo

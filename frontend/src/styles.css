@@ -65,3 +65,88 @@ body {
   border-color: #ffc1e3;
   box-shadow: 0 0 0 0.2rem rgba(255, 193, 227, 0.25);
 }
+
+:root {
+  --p-rosa: #ffc1e3;
+  --p-amarillo: #fff3b0;
+  --p-azul: #cce5ff;
+  --p-naranja: #ffd6a5;
+  --texto: #111;
+}
+
+/* =========================
+   Botones estilo Bootstrap (solo colores)
+========================= */
+
+/* Crear diagrama (azul claro) */
+.btn-crear-diagrama {
+  background-color: var(--p-azul);
+  border-color: var(--p-azul);
+  color: var(--texto);
+}
+
+.btn-crear-diagrama:hover {
+  background-color: #bfe0ff; /* un poco más fuerte */
+  border-color: #bfe0ff;
+  color: var(--texto);
+}
+
+.btn-crear-diagrama:focus {
+  box-shadow: 0 0 0 0.25rem rgba(204, 229, 255, 0.6);
+}
+
+.btn-crear-diagrama:active {
+  background-color: #b0d8ff;
+  border-color: #b0d8ff;
+}
+
+/* VER (azul claro) */
+.btn-ver {
+  background-color: var(--p-azul);
+  border-color: var(--p-azul);
+  color: var(--texto);
+}
+
+.btn-ver:hover {
+  background-color: #bfe0ff;
+  border-color: #bfe0ff;
+  color: var(--texto);
+}
+
+.btn-ver:focus {
+  box-shadow: 0 0 0 0.25rem rgba(204, 229, 255, 0.6);
+}
+
+/* EDITAR (amarillo/naranja pastel) */
+.btn-editar {
+  background-color: var(--p-amarillo);
+  border-color: var(--p-amarillo);
+  color: var(--texto);
+}
+
+.btn-editar:hover {
+  background-color: #ffe58a; /* más intenso */
+  border-color: #ffe58a;
+  color: var(--texto);
+}
+
+.btn-editar:focus {
+  box-shadow: 0 0 0 0.25rem rgba(255, 243, 176, 0.65);
+}
+
+/* ELIMINAR (rosa pastel) */
+.btn-eliminar {
+  background-color: var(--p-rosa);
+  border-color: var(--p-rosa);
+  color: var(--texto);
+}
+
+.btn-eliminar:hover {
+  background-color: #ffadd6; /* más intenso */
+  border-color: #ffadd6;
+  color: var(--texto);
+}
+
+.btn-eliminar:focus {
+  box-shadow: 0 0 0 0.25rem rgba(255, 193, 227, 0.65);
+}
