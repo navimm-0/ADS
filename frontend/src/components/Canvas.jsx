@@ -129,10 +129,52 @@ const InputOutputNode = ({ id, data, isConnectable }) => {
   );
 };
 
+// Supports:
+// - https://www.youtube.com/watch?v=VIDEO_ID
+// - https://youtu.be/VIDEO_ID
+// - https://www.youtube.com/embed/VIDEO_ID
+// - https://www.youtube.com/shorts/VIDEO_ID
+// - with extra params like &t=30s, ?si=...
+const getYoutubeId = (url) => {
+  if (!url) return null;
+
+  try {
+    const u = new URL(url);
+
+    // youtu.be/VIDEO_ID
+    if (u.hostname.includes('youtu.be')) {
+      const id = u.pathname.split('/').filter(Boolean)[0];
+      return id && id.length === 11 ? id : null;
+    }
+
+    // youtube.com/watch?v=VIDEO_ID
+    const v = u.searchParams.get('v');
+    if (v && v.length === 11) return v;
+
+    // youtube.com/embed/VIDEO_ID, /shorts/VIDEO_ID, /live/VIDEO_ID
+    const parts = u.pathname.split('/').filter(Boolean);
+    const idx = parts.findIndex((p) => ['embed', 'shorts', 'live', 'v'].includes(p));
+    if (idx !== -1 && parts[idx + 1] && parts[idx + 1].length === 11) return parts[idx + 1];
+
+    return null;
+  } catch (e) {
+    // If it's not a valid URL, fall back to regex scan
+    const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/))([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : null;
+  }
+};
+
+const getYoutubeEmbedUrl = (url) => {
+  const id = getYoutubeId(url);
+  return id ? `https://www.youtube.com/embed/${id}` : null;
+};
+
 const MultimediaNode = ({ id, data, isConnectable }) => {
   const esImagen = data.mediaUrl && data.mediaUrl.match(/\.(jpeg|jpg|gif|png)$/i) != null;
   const esVideo = data.mediaUrl && data.mediaUrl.match(/\.(mp4|webm)$/i) != null;
   const esAudio = data.mediaUrl && data.mediaUrl.match(/\.(mp3|wav)$/i) != null;
+  const youtubeEmbed = data.mediaEmbedUrl || getYoutubeEmbedUrl(data.mediaUrl);
+  const esYoutube = !!youtubeEmbed;
 
   return (
     <div
@@ -165,16 +207,42 @@ const MultimediaNode = ({ id, data, isConnectable }) => {
       <div style={{ flex: 1, padding: '5px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <input
           className="nodrag form-control form-control-sm mb-2"
-          placeholder="Pega URL (img/mp3/mp4)"
+          placeholder="Pega URL (img/mp3/mp4/YouTube)"
           value={data.mediaUrl || ''}
           onChange={(evt) => data.onMediaChange(id, evt.target.value)}
           style={{ fontSize: '9px', padding: '2px' }}
         />
 
-        {esImagen && <img src={data.mediaUrl} alt="media" style={{ maxWidth: '100%', maxHeight: '100px', borderRadius: '4px' }} />}
-        {esVideo && <video src={data.mediaUrl} controls style={{ maxWidth: '100%', maxHeight: '100px' }} />}
-        {esAudio && <audio src={data.mediaUrl} controls style={{ width: '100%', height: '30px' }} />}
+        {esYoutube && (
+        <div style={{ width: '100%' }}>
+            <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%' }}>
+            <iframe
+                title="YouTube"
+                src={youtubeEmbed}
+                style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                border: 0,
+                borderRadius: '6px',
+                }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+            />
+            </div>
+        </div>
+        )}
 
+        {!esYoutube && esImagen && (
+        <img src={data.mediaUrl} alt="media" style={{ maxWidth: '100%', maxHeight: '100px', borderRadius: '4px' }} />
+        )}
+        {!esYoutube && esVideo && (
+        <video src={data.mediaUrl} controls style={{ maxWidth: '100%', maxHeight: '100px' }} />
+        )}
+        {!esYoutube && esAudio && (
+        <audio src={data.mediaUrl} controls style={{ width: '100%', height: '30px' }} />
+        )}
         <textarea
           className="nodrag"
           value={data.label}
@@ -256,20 +324,36 @@ const Canvas = ({ usuario, tipo, mode = 'create', itemToEdit = null, onSaved = n
 
     const onNodeLabelChange = useCallback((nodeId, newLabel) => {
         setNodes((nds) =>
-        nds.map((n) => {
-            if (n.id === nodeId) return { ...n, data: { ...n.data, label: newLabel } };
+            nds.map((n) => {
+            if (n.id === nodeId) {
+                return { ...n, data: { ...n.data, label: newLabel } };
+            }
             return n;
-        })
+            })
         );
+        setDirty(true);
     }, [setNodes]);
 
     const onNodeMediaChange = useCallback((nodeId, newUrl) => {
+        const yt = getYoutubeEmbedUrl(newUrl);
+
         setNodes((nds) =>
-        nds.map((n) => {
-            if (n.id === nodeId) return { ...n, data: { ...n.data, mediaUrl: newUrl } };
+            nds.map((n) => {
+            if (n.id === nodeId) {
+                return {
+                ...n,
+                data: {
+                    ...n.data,
+                    mediaUrl: newUrl,
+                    mediaEmbedUrl: yt || null,
+                },
+                };
+            }
             return n;
-        })
+            })
         );
+
+        setDirty(true);
     }, [setNodes]);
 
     const setNodoInicial = useCallback(() => {

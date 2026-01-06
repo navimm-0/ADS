@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+// src/componentes/CanvasViewer.jsx
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ReactFlow, {
   Background,
@@ -9,6 +10,45 @@ import ReactFlow, {
   ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
+
+// -----------------------------
+// Helpers: YouTube parsing
+// -----------------------------
+const getYoutubeId = (url) => {
+  if (!url) return null;
+
+  try {
+    const u = new URL(url);
+
+    // youtu.be/VIDEO_ID
+    if (u.hostname.includes('youtu.be')) {
+      const id = u.pathname.split('/').filter(Boolean)[0];
+      return id && id.length === 11 ? id : null;
+    }
+
+    // youtube.com/watch?v=VIDEO_ID
+    const v = u.searchParams.get('v');
+    if (v && v.length === 11) return v;
+
+    // youtube.com/embed/VIDEO_ID, /shorts/VIDEO_ID, /live/VIDEO_ID, /v/VIDEO_ID
+    const parts = u.pathname.split('/').filter(Boolean);
+    const idx = parts.findIndex((p) => ['embed', 'shorts', 'live', 'v'].includes(p));
+    if (idx !== -1 && parts[idx + 1] && parts[idx + 1].length === 11) return parts[idx + 1];
+
+    return null;
+  } catch (e) {
+    // Not a valid URL -> fallback regex scan
+    const m = String(url).match(
+      /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/))([A-Za-z0-9_-]{11})/
+    );
+    return m ? m[1] : null;
+  }
+};
+
+const getYoutubeEmbedUrl = (url) => {
+  const id = getYoutubeId(url);
+  return id ? `https://www.youtube.com/embed/${id}` : null;
+};
 
 // --- NODOS SOLO LECTURA ---
 
@@ -61,7 +101,16 @@ const StandardNodeView = ({ data, isConnectable }) => {
 // B. NODO DECISIÓN (solo lectura)
 const DecisionNodeView = ({ data, isConnectable }) => {
   return (
-    <div style={{ position: 'relative', width: '100px', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div
+      style={{
+        position: 'relative',
+        width: '100px',
+        height: '100px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       <div
         style={{
           position: 'absolute',
@@ -89,7 +138,16 @@ const DecisionNodeView = ({ data, isConnectable }) => {
 // C. NODO E/S (solo lectura)
 const InputOutputNodeView = ({ data, isConnectable }) => {
   return (
-    <div style={{ position: 'relative', width: '140px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div
+      style={{
+        position: 'relative',
+        width: '140px',
+        height: '60px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       <div
         style={{
           position: 'absolute',
@@ -118,6 +176,9 @@ const InputOutputNodeView = ({ data, isConnectable }) => {
 // D. NODO MULTIMEDIA (solo lectura)
 const MultimediaNodeView = ({ data, isConnectable }) => {
   const url = data.mediaUrl || '';
+  const youtubeEmbed = getYoutubeEmbedUrl(url);
+  const esYoutube = !!youtubeEmbed;
+
   const esImagen = url && url.match(/\.(jpeg|jpg|gif|png)$/i) != null;
   const esVideo = url && url.match(/\.(mp4|webm)$/i) != null;
   const esAudio = url && url.match(/\.(mp3|wav)$/i) != null;
@@ -136,20 +197,75 @@ const MultimediaNodeView = ({ data, isConnectable }) => {
         boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
       }}
     >
-      <div style={{ width: '100%', height: '20px', background: '#007bff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div
+        style={{
+          width: '100%',
+          height: '20px',
+          background: '#007bff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <span style={{ color: 'white', fontSize: '10px' }}>Multimedia</span>
       </div>
 
-      <div style={{ flex: 1, padding: '6px', display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center', justifyContent: 'center' }}>
+      {/* IMPORTANT:
+          - nodrag + nopan so ReactFlow doesn't steal clicks
+          - pointerEvents:auto so video/iframe controls work
+      */}
+      <div
+        className="nodrag nopan"
+        style={{
+          flex: 1,
+          padding: '6px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'auto',
+        }}
+      >
         {url && (
           <div style={{ fontSize: 9, wordBreak: 'break-all', textAlign: 'center', color: '#333' }}>
             {url}
           </div>
         )}
 
-        {esImagen && <img src={url} alt="media" style={{ maxWidth: '100%', maxHeight: 110, borderRadius: 6 }} />}
-        {esVideo && <video src={url} controls style={{ maxWidth: '100%', maxHeight: 110 }} />}
-        {esAudio && <audio src={url} controls style={{ width: '100%' }} />}
+        {esYoutube && (
+          <div className="nodrag nopan" style={{ width: '100%', pointerEvents: 'auto' }}>
+            <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%' }}>
+              <iframe
+                title="YouTube"
+                src={youtubeEmbed}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  border: 0,
+                  borderRadius: 6,
+                  pointerEvents: 'auto',
+                }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        )}
+
+        {!esYoutube && esImagen && (
+          <img src={url} alt="media" style={{ maxWidth: '100%', maxHeight: 110, borderRadius: 6, pointerEvents: 'auto' }} />
+        )}
+
+        {!esYoutube && esVideo && (
+          <video src={url} controls style={{ maxWidth: '100%', maxHeight: 110, pointerEvents: 'auto' }} />
+        )}
+
+        {!esYoutube && esAudio && (
+          <audio src={url} controls style={{ width: '100%', pointerEvents: 'auto' }} />
+        )}
 
         <div style={{ width: '100%' }}>
           <ReadOnlyLabel text={data.label || ''} />
@@ -189,20 +305,23 @@ function CanvasViewerInner() {
       return;
     }
 
-    // Fallback: si no hay estructura, mostramos "nodo" con imagen (si existe)
+    // Fallback: si no hay estructura, mostramos nodo simple
     const url = itemToView?.datos?.url;
     if (url) {
       setNodes([
         {
-          id: 'img',
+          id: 'fallback',
           type: 'standard',
           position: { x: 50, y: 50 },
           data: {
-            label: 'Vista previa (imagen)',
+            label: 'Vista previa disponible',
             customStyle: { background: '#fff' },
           },
         },
       ]);
+      setEdges([]);
+    } else {
+      setNodes([]);
       setEdges([]);
     }
   }, [itemToView]);
@@ -220,7 +339,11 @@ function CanvasViewerInner() {
 
         <div className="text-end">
           <div className="fw-bold">Título: {titulo}</div>
-          {usuario && <div className="text-muted" style={{ fontSize: 12 }}>Autor: {usuario}</div>}
+          {usuario && (
+            <div className="text-muted" style={{ fontSize: 12 }}>
+              Autor: {usuario}
+            </div>
+          )}
         </div>
       </div>
 
@@ -254,7 +377,6 @@ function CanvasViewerInner() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
